@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "id": "arduino/uno-q",
+  "vendor": "Arduino",
+  "model": "UNO Q",
+  "arch": "aarch64",
+  "min_flash_version": "0.1.0",
+  "match": {
+    "compatible": ["arduino,imola"],
+    "usb": [
+      { "mode": "edl", "vid": "05c6", "pid": "9008" }
+    ]
+  },
+  "install": {
+    "method": "installer-stick",
+    "esp": "efi",
+    "replace": ["rootfs", "userdata"]
+  },
+  "firmware": {
+    "preserve": true,
+    "restore": "https://docs.arduino.cc/tutorials/uno-q/update-image/"
+  },
+  "notes": [
+    "Boot the stick through a USB-C dock with its own power supply and the display connected before power-on.",
+    "The installer replaces only the rootfs and userdata partitions. Every Qualcomm firmware partition and the boot chain stay as shipped."
+  ]
+}

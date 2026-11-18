@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "devices": [
+    {
+      "id": "arduino/uno-q",
+      "path": "devices/arduino/uno-q.json",
+      "vendor": "Arduino",
+      "model": "UNO Q",
+      "min_flash_version": "0.1.0",
+      "sha256": "f96cbd7e236dcf1bcb888f5f82f80dd32570e8073ba9db9a0c770264bf03296e"
+    }
+  ]
+}

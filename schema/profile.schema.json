@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/singularityos-lab/sinty-devices/schema/profile.schema.json",
+  "title": "Sinty device profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "vendor", "model", "arch", "min_flash_version", "match", "install"],
+  "properties": {
+    "schema": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z0-9-]+/[a-z0-9-]+$" },
+    "vendor": { "type": "string", "minLength": 1 },
+    "model": { "type": "string", "minLength": 1 },
+    "arch": { "enum": ["x86_64", "aarch64"] },
+    "min_flash_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "match": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "compatible": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "usb": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["mode", "vid", "pid"],
+            "properties": {
+              "mode": { "enum": ["edl", "fastboot", "ums", "normal"] },
+              "vid": { "type": "string", "pattern": "^[0-9a-f]{4}$" },
+              "pid": { "type": "string", "pattern": "^[0-9a-f]{4}$" }
+            }
+          }
+        }
+      }
+    },
+    "install": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method"],
+      "properties": {
+        "method": { "enum": ["installer-stick", "fastboot"] },
+        "esp": { "type": "string", "minLength": 1 },
+        "replace": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "partitions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "source"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "source": { "enum": ["esp", "root", "hash", "data"] }
+            }
+          }
+        },
+        "unlock": { "type": "string", "minLength": 1 }
+      }
+    },
+    "firmware": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "preserve": { "type": "boolean" },
+        "restore": { "type": "string", "pattern": "^https://" }
+      }
+    },
+    "notes": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+  }
+}
