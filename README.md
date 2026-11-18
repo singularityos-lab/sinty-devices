@@ -4,8 +4,10 @@ The device catalog for Sinty OS: one JSON profile per device model, telling the
 installer and `sinty-flash` how to put Sinty on it without touching the firmware
 the device shipped with.
 
-Tools read the catalog from this repository at run time, so a new profile reaches
-users as soon as it is merged, with no tool update.
+`sinty-flash` reads the catalog from this repository at run time, so a new profile
+reaches users as soon as it is merged, with no tool update. The Sinty installer
+embeds the catalog at the version its image was built with, since it runs before
+the device has a network.
 
 ## Layout
 
@@ -15,6 +17,7 @@ users as soon as it is merged, with no tool update.
 | `index.json` | the list tools fetch first, with the digest of every profile |
 | `schema/profile.schema.json` | the profile format, for editors |
 | `profile/` | the Go package that parses and validates profiles, shared with the tools |
+| `devices.go` | the catalog embedded in Go, for the Sinty installer that runs offline |
 | `cmd/validate` | the check CI runs on every pull request |
 
 ## Profile
