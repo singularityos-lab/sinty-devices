@@ -19,7 +19,9 @@ the device has a network.
 | `profile/` | the Go package that parses and validates profiles, shared with the tools |
 | `devices.go` | the catalog embedded in Go, for the Sinty installer that runs offline |
 | `android/` | reads the logical partitions of an Android `super` partition |
+| `device/` | finds the running device's profile and the partitions it names |
 | `cmd/sinty-vendor-firmware` | installs the firmware a profile extracts, on the device |
+| `cmd/sinty-android-boot` | keeps a phone's boot partitions on the kernel of the root it runs |
 | `cmd/validate` | the check CI runs on every pull request |
 
 ## Profile
@@ -70,6 +72,12 @@ the device has a network.
   `/chosen`, the `vendor_cmdline`, an empty `dtbo` board overlay, the OS
   version, and `avb` hash footers padded to each partition. See
   `devices/google/pixel-7-pro.json`.
+  Updates keep the boot partitions in step: `sinty-android-boot` is an
+  [Atom Loops](https://github.com/mirkobrombin/AtomLoops) kernel hook that
+  rebuilds the same images from the kernel a staged update carries and writes
+  them only to the partitions `install.partitions` lists, and on every boot
+  writes back the booted release's kernel if a failed update left another one
+  in place.
 - `firmware.restore` links the vendor's own way back to the original system.
 - `firmware.extract` lists the firmware a device takes from the Android
   partition its owner already has on it, under the names the mainline drivers

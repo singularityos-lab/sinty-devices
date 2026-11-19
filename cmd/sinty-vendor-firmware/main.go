@@ -6,7 +6,6 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"errors"
 	"flag"
 	"fmt"
@@ -18,8 +17,8 @@ import (
 	"syscall"
 
 	"github.com/mirkobrombin/atomloops/boot"
-	devices "github.com/singularityos-lab/sinty-devices"
 	"github.com/singularityos-lab/sinty-devices/android"
+	"github.com/singularityos-lab/sinty-devices/device"
 	"github.com/singularityos-lab/sinty-devices/profile"
 )
 
@@ -45,20 +44,19 @@ func main() {
 }
 
 func run(out, sysBlock, compatPath, bootconfig string) error {
-	compat, err := os.ReadFile(compatPath)
-	if err != nil {
+	dev := device.Paths{Compatible: compatPath, SysBlock: sysBlock, Dev: "/dev"}
+	p, err := dev.Profile()
+	if errors.Is(err, device.ErrUnknown) {
 		return nil
 	}
-	profiles, err := devices.Profiles()
 	if err != nil {
 		return err
 	}
-	p := match(profiles, strings.Split(strings.TrimRight(string(compat), "\x00"), "\x00"))
-	if p == nil || p.Firmware == nil || p.Firmware.Extract == nil {
+	if p.Firmware == nil || p.Firmware.Extract == nil {
 		return nil
 	}
 	x := p.Firmware.Extract
-	super, err := findPartition(sysBlock, "super")
+	super, err := dev.Partition("super")
 	if err != nil {
 		return err
 	}
@@ -66,12 +64,12 @@ func run(out, sysBlock, compatPath, bootconfig string) error {
 	if err != nil {
 		return err
 	}
-	dev, err := os.Open(super)
+	disk, err := os.Open(super)
 	if err != nil {
 		return err
 	}
-	parts, err := android.ReadSuper(dev, slot)
-	dev.Close()
+	parts, err := android.ReadSuper(disk, slot)
+	disk.Close()
 	if err != nil {
 		return fmt.Errorf("%s: %w", super, err)
 	}
@@ -112,36 +110,6 @@ func run(out, sysBlock, compatPath, bootconfig string) error {
 	}
 	fmt.Printf("sinty-vendor-firmware: %d files from %s (%s) in %s\n", n, name, stamp, out)
 	return nil
-}
-
-func match(profiles []*profile.Profile, compat []string) *profile.Profile {
-	for _, c := range compat {
-		for _, p := range profiles {
-			for _, m := range p.Match.Compatible {
-				if m == c {
-					return p
-				}
-			}
-		}
-	}
-	return nil
-}
-
-func findPartition(sysBlock, partName string) (string, error) {
-	entries, err := os.ReadDir(sysBlock)
-	if err != nil {
-		return "", err
-	}
-	for _, e := range entries {
-		b, err := os.ReadFile(filepath.Join(sysBlock, e.Name(), "uevent"))
-		if err != nil {
-			continue
-		}
-		if bytes.Contains(b, []byte("\nPARTNAME="+partName+"\n")) || bytes.HasPrefix(b, []byte("PARTNAME="+partName+"\n")) {
-			return filepath.Join("/dev", e.Name()), nil
-		}
-	}
-	return "", fmt.Errorf("no %s partition", partName)
 }
 
 func bootedSlot(bootconfig string) (int, error) {

@@ -2,3 +2,7 @@ github.com/mirkobrombin/atomloops v0.2.10-0.20261119163346-6e7d0dccebd8 h1:Jv0a5
 github.com/mirkobrombin/atomloops v0.2.10-0.20261119163346-6e7d0dccebd8/go.mod h1:18MprTBFQSIFeYCnzhsK7grT9e3E7Yxao1gE+mG4bgY=
 github.com/mirkobrombin/go-foundation v1.1.1 h1:96OBbRCglZYCgi2Tu+H0/bK3JGdPDBJRCQMD/cXMu4U=
 github.com/mirkobrombin/go-foundation v1.1.1/go.mod h1:ScQBotKzuC5Lxi61Wyw0h8NaeGKsuwp4xHwPj5Mj9DY=
+github.com/pierrec/lz4/v4 v4.1.22 h1:cKFw6uJDK+/gfw5BcDL0JL5aBsAFdsIT18eRtLj7VIU=
+github.com/pierrec/lz4/v4 v4.1.22/go.mod h1:gZWDp/Ze/IJXGXf23ltt2EXimqmTUXEy0GFuRQyBid4=
+github.com/singularityos-lab/sinty-bootimg v0.0.0-20261119141939-47f565715dbc h1:RuxoahpH0HopKAMLwMC4T3DfTQQ6xQy8ihFPxoEoZYg=
+github.com/singularityos-lab/sinty-bootimg v0.0.0-20261119141939-47f565715dbc/go.mod h1:2uSUxm2zlCZFNHovAK8KnJjEIJ1WTXFyim/Jihqi0J8=
