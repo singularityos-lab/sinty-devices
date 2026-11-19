@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -43,6 +44,108 @@ type Firmware struct {
 	Restore  string `json:"restore,omitempty"`
 }
 
+type SocID struct {
+	Name string `json:"name"`
+	ID   string `json:"id"`
+}
+
+type DTBO struct {
+	BoardID  string `json:"board_id"`
+	BoardRev string `json:"board_rev"`
+	PageSize int    `json:"page_size"`
+}
+
+type AVBFooter struct {
+	Partition string `json:"partition"`
+	Size      string `json:"size"`
+}
+
+type AVB struct {
+	RollbackIndex uint64      `json:"rollback_index"`
+	SecurityPatch string      `json:"security_patch"`
+	Footers       []AVBFooter `json:"footers"`
+}
+
+// Boot says how to pack the kernel, device tree and initramfs for a
+// bootloader that does not read them from a filesystem.
+type Boot struct {
+	Format         string   `json:"format"`
+	Images         []string `json:"images"`
+	DTB            string   `json:"dtb"`
+	SocIDs         []SocID  `json:"soc_ids,omitempty"`
+	Bootargs       string   `json:"bootargs,omitempty"`
+	VendorCmdline  string   `json:"vendor_cmdline,omitempty"`
+	VendorPageSize int      `json:"vendor_page_size"`
+	OSVersion      string   `json:"os_version,omitempty"`
+	OSPatchLevel   string   `json:"os_patch_level,omitempty"`
+	DTBO           *DTBO    `json:"dtbo,omitempty"`
+	AVB            *AVB     `json:"avb,omitempty"`
+}
+
+var BootImages = []string{"boot", "init_boot", "vendor_boot", "vendor_kernel_boot", "dtbo"}
+
+func ParseHex32(s string) (uint32, error) {
+	if !strings.HasPrefix(s, "0x") {
+		return 0, fmt.Errorf("%q is not 0x-prefixed hex", s)
+	}
+	v, err := strconv.ParseUint(s[2:], 16, 32)
+	return uint32(v), err
+}
+
+func (b *Boot) validate(bad func(string, ...any)) {
+	if b.Format != "android-v4" {
+		bad("boot format %q is unknown", b.Format)
+		return
+	}
+	has := map[string]bool{}
+	for _, i := range b.Images {
+		if !slices.Contains(BootImages, i) {
+			bad("boot image %q is unknown", i)
+		}
+		has[i] = true
+	}
+	if !has["boot"] || !has["vendor_boot"] {
+		bad("android-v4 needs at least boot and vendor_boot")
+	}
+	if b.DTB == "" || strings.HasPrefix(b.DTB, "/") || strings.Contains(b.DTB, "..") {
+		bad("boot dtb %q is not a path inside the kernel's dts directory", b.DTB)
+	}
+	for _, s := range b.SocIDs {
+		if _, err := ParseHex32(s.ID); err != nil || s.Name == "" {
+			bad("soc id %q: %v", s.Name, err)
+		}
+	}
+	switch b.VendorPageSize {
+	case 2048, 4096, 16384:
+	default:
+		bad("vendor_page_size %d is not 2048, 4096 or 16384", b.VendorPageSize)
+	}
+	if has["dtbo"] != (b.DTBO != nil) {
+		bad("dtbo settings and the dtbo image go together")
+	}
+	if b.DTBO != nil {
+		if _, err := ParseHex32(b.DTBO.BoardID); err != nil {
+			bad("dtbo board_id: %v", err)
+		}
+		if _, err := ParseHex32(b.DTBO.BoardRev); err != nil {
+			bad("dtbo board_rev: %v", err)
+		}
+		if b.DTBO.PageSize <= 0 {
+			bad("dtbo page_size must be positive")
+		}
+	}
+	if b.AVB != nil {
+		for _, f := range b.AVB.Footers {
+			if !has[f.Partition] {
+				bad("avb footer for %q, which is not a boot image", f.Partition)
+			}
+			if _, err := ParseHex32(f.Size); err != nil {
+				bad("avb footer size for %q: %v", f.Partition, err)
+			}
+		}
+	}
+}
+
 type Profile struct {
 	Schema          int       `json:"schema"`
 	ID              string    `json:"id"`
@@ -52,6 +155,7 @@ type Profile struct {
 	MinFlashVersion string    `json:"min_flash_version"`
 	Match           Match     `json:"match"`
 	Install         Install   `json:"install"`
+	Boot            *Boot     `json:"boot,omitempty"`
 	Firmware        *Firmware `json:"firmware,omitempty"`
 	Notes           []string  `json:"notes,omitempty"`
 }
@@ -129,6 +233,12 @@ func (p *Profile) Validate() error {
 			switch part.Source {
 			case "esp", "root", "hash", "data":
 			default:
+				if slices.Contains(BootImages, part.Source) {
+					if p.Boot == nil || !slices.Contains(p.Boot.Images, part.Source) {
+						bad("partition %q takes the %s image, which the boot section does not build", part.Name, part.Source)
+					}
+					continue
+				}
 				bad("partition %q has unknown source %q", part.Name, part.Source)
 			}
 			if part.Name == "" {
@@ -137,6 +247,9 @@ func (p *Profile) Validate() error {
 		}
 	default:
 		bad("install method %q is unknown", p.Install.Method)
+	}
+	if p.Boot != nil {
+		p.Boot.validate(bad)
 	}
 	if p.Firmware != nil && p.Firmware.Restore != "" && !strings.HasPrefix(p.Firmware.Restore, "https://") {
 		bad("firmware restore link must be https")

@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "id": "google/pixel-7-pro",
+  "vendor": "Google",
+  "model": "Pixel 7 Pro",
+  "arch": "aarch64",
+  "min_flash_version": "0.2.0",
+  "match": {
+    "compatible": ["google,gs201-cheetah"],
+    "usb": [
+      { "mode": "fastboot", "vid": "18d1", "pid": "4ee0" }
+    ]
+  },
+  "install": {
+    "method": "fastboot",
+    "unlock": "flashing unlock",
+    "partitions": [
+      { "name": "boot_a", "source": "boot" },
+      { "name": "init_boot_a", "source": "init_boot" },
+      { "name": "vendor_boot_a", "source": "vendor_boot" },
+      { "name": "vendor_kernel_boot_a", "source": "vendor_kernel_boot" },
+      { "name": "dtbo_a", "source": "dtbo" },
+      { "name": "userdata", "source": "data" }
+    ]
+  },
+  "boot": {
+    "format": "android-v4",
+    "images": ["boot", "init_boot", "vendor_boot", "vendor_kernel_boot", "dtbo"],
+    "dtb": "exynos/google/gs201-cheetah-full.dtb",
+    "soc_ids": [
+      { "name": "b0", "id": "0x9855001" },
+      { "name": "a0", "id": "0x9855000" }
+    ],
+    "bootargs": "console=tty0 loglevel=4 quiet panic=10 clk_ignore_unused pd_ignore_unused rdinit=/init mem_sleep_default=s2idle vt.global_cursor_default=0 sing.roothash=anchor sing.datapart=userdata lsm=landlock,yama,bpf",
+    "vendor_cmdline": "console=tty0 earlycon=exynos4210,0x10A00000 clk_ignore_unused pd_ignore_unused printk.devkmsg=on bootconfig",
+    "vendor_page_size": 2048,
+    "os_version": "17.0.0",
+    "os_patch_level": "2026-07",
+    "dtbo": { "board_id": "0x30306", "board_rev": "0x10000", "page_size": 4096 },
+    "avb": {
+      "rollback_index": 1783209600,
+      "security_patch": "2026-07-05",
+      "footers": [
+        { "partition": "boot", "size": "0x4000000" },
+        { "partition": "init_boot", "size": "0x800000" }
+      ]
+    }
+  },
+  "firmware": {
+    "preserve": true,
+    "restore": "https://developers.google.com/android/images#cheetah"
+  },
+  "notes": [
+    "Unlock the bootloader first: enable OEM unlocking in Android's developer options, then run the unlock from fastboot. Unlocking wipes the phone.",
+    "Sinty replaces the slot A boot images and userdata. The bootloader, modem, persist and EFS partitions stay as shipped, so the phone keeps its IMEI and calibration.",
+    "Android comes back by flashing the factory image for cheetah."
+  ]
+}

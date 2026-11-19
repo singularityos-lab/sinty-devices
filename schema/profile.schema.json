@@ -4,29 +4,80 @@
   "title": "Sinty device profile",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "id", "vendor", "model", "arch", "min_flash_version", "match", "install"],
+  "required": [
+    "schema",
+    "id",
+    "vendor",
+    "model",
+    "arch",
+    "min_flash_version",
+    "match",
+    "install"
+  ],
   "properties": {
-    "schema": { "const": 1 },
-    "id": { "type": "string", "pattern": "^[a-z0-9-]+/[a-z0-9-]+$" },
-    "vendor": { "type": "string", "minLength": 1 },
-    "model": { "type": "string", "minLength": 1 },
-    "arch": { "enum": ["x86_64", "aarch64"] },
-    "min_flash_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "schema": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+/[a-z0-9-]+$"
+    },
+    "vendor": {
+      "type": "string",
+      "minLength": 1
+    },
+    "model": {
+      "type": "string",
+      "minLength": 1
+    },
+    "arch": {
+      "enum": [
+        "x86_64",
+        "aarch64"
+      ]
+    },
+    "min_flash_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
     "match": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "compatible": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "compatible": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
         "usb": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["mode", "vid", "pid"],
+            "required": [
+              "mode",
+              "vid",
+              "pid"
+            ],
             "properties": {
-              "mode": { "enum": ["edl", "fastboot", "ums", "normal"] },
-              "vid": { "type": "string", "pattern": "^[0-9a-f]{4}$" },
-              "pid": { "type": "string", "pattern": "^[0-9a-f]{4}$" }
+              "mode": {
+                "enum": [
+                  "edl",
+                  "fastboot",
+                  "ums",
+                  "normal"
+                ]
+              },
+              "vid": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{4}$"
+              },
+              "pid": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{4}$"
+              }
             }
           }
         }
@@ -35,34 +86,224 @@
     "install": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["method"],
+      "required": [
+        "method"
+      ],
       "properties": {
-        "method": { "enum": ["installer-stick", "fastboot"] },
-        "esp": { "type": "string", "minLength": 1 },
-        "replace": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "method": {
+          "enum": [
+            "installer-stick",
+            "fastboot"
+          ]
+        },
+        "esp": {
+          "type": "string",
+          "minLength": 1
+        },
+        "replace": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
         "partitions": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["name", "source"],
+            "required": [
+              "name",
+              "source"
+            ],
             "properties": {
-              "name": { "type": "string", "minLength": 1 },
-              "source": { "enum": ["esp", "root", "hash", "data"] }
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "source": {
+                "enum": [
+                  "esp",
+                  "root",
+                  "hash",
+                  "data",
+                  "boot",
+                  "init_boot",
+                  "vendor_boot",
+                  "vendor_kernel_boot",
+                  "dtbo"
+                ]
+              }
             }
           }
         },
-        "unlock": { "type": "string", "minLength": 1 }
+        "unlock": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "boot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "images",
+        "dtb",
+        "vendor_page_size"
+      ],
+      "properties": {
+        "format": {
+          "const": "android-v4"
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "boot",
+              "init_boot",
+              "vendor_boot",
+              "vendor_kernel_boot",
+              "dtbo"
+            ]
+          },
+          "minItems": 2
+        },
+        "dtb": {
+          "type": "string",
+          "minLength": 1
+        },
+        "soc_ids": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "id"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "id": {
+                "type": "string",
+                "pattern": "^0x[0-9a-f]{1,8}$"
+              }
+            }
+          }
+        },
+        "bootargs": {
+          "type": "string"
+        },
+        "vendor_cmdline": {
+          "type": "string"
+        },
+        "vendor_page_size": {
+          "enum": [
+            2048,
+            4096,
+            16384
+          ]
+        },
+        "os_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "os_patch_level": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}$"
+        },
+        "dtbo": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "board_id",
+            "board_rev",
+            "page_size"
+          ],
+          "properties": {
+            "board_id": {
+              "type": "string",
+              "pattern": "^0x[0-9a-f]{1,8}$"
+            },
+            "board_rev": {
+              "type": "string",
+              "pattern": "^0x[0-9a-f]{1,8}$"
+            },
+            "page_size": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "avb": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "rollback_index",
+            "security_patch",
+            "footers"
+          ],
+          "properties": {
+            "rollback_index": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "security_patch": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+            },
+            "footers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "partition",
+                  "size"
+                ],
+                "properties": {
+                  "partition": {
+                    "enum": [
+                      "boot",
+                      "init_boot",
+                      "vendor_boot",
+                      "vendor_kernel_boot",
+                      "dtbo"
+                    ]
+                  },
+                  "size": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-f]{1,8}$"
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "firmware": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "preserve": { "type": "boolean" },
-        "restore": { "type": "string", "pattern": "^https://" }
+        "preserve": {
+          "type": "boolean"
+        },
+        "restore": {
+          "type": "string",
+          "pattern": "^https://"
+        }
       }
     },
-    "notes": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
   }
 }

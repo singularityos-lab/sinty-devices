@@ -57,8 +57,17 @@ the device has a network.
     lists the only partitions the installer may reformat. Every other partition
     is left as shipped.
   - `fastboot`: `sinty-flash` writes the listed `partitions` over fastboot, each
-    from one part of the Sinty image (`esp`, `root`, `hash`, `data`). `unlock`
-    names the bootloader unlock command when the device needs one.
+    from one part of the Sinty image (`esp`, `root`, `hash`, `data`) or from a
+    boot image the `boot` section builds. `unlock` names the bootloader unlock
+    command when the device needs one.
+- `boot` describes the boot images of a device whose bootloader does not read
+  the kernel from a filesystem, such as Android phones. With `android-v4`,
+  [sinty-bootimg](https://github.com/singularityos-lab/sinty-bootimg) packs
+  the kernel, the `dtb` built in the kernel tree and the initramfs into the
+  listed `images`: one DTB copy per `soc_ids` entry with `bootargs` on
+  `/chosen`, the `vendor_cmdline`, an empty `dtbo` board overlay, the OS
+  version, and `avb` hash footers padded to each partition. See
+  `devices/google/pixel-7-pro.json`.
 - `firmware.restore` links the vendor's own way back to the original system.
 
 ## Adding a device

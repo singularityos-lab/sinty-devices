@@ -8,6 +8,14 @@
       "model": "UNO Q",
       "min_flash_version": "0.1.0",
       "sha256": "f96cbd7e236dcf1bcb888f5f82f80dd32570e8073ba9db9a0c770264bf03296e"
+    },
+    {
+      "id": "google/pixel-7-pro",
+      "path": "devices/google/pixel-7-pro.json",
+      "vendor": "Google",
+      "model": "Pixel 7 Pro",
+      "min_flash_version": "0.2.0",
+      "sha256": "be65887f8cbaa3d3985abe187afff0358b5c3ae61b933e5d6edcbd1fd8cbb10a"
     }
   ]
 }

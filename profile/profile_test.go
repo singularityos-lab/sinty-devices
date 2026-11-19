@@ -1,6 +1,7 @@
 package profile
 
 import (
+	"os"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -90,5 +91,27 @@ func TestBuildIndexRejectsMisplaced(t *testing.T) {
 		if _, err := BuildIndex(fsys); err == nil {
 			t.Errorf("%s: accepted", name)
 		}
+	}
+}
+
+func TestPixelBootProfile(t *testing.T) {
+	data, err := os.ReadFile("../devices/google/pixel-7-pro.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := Parse(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Boot == nil || p.Boot.DTBO == nil || len(p.Boot.AVB.Footers) != 2 {
+		t.Fatalf("boot section not read: %+v", p.Boot)
+	}
+	broken := strings.Replace(string(data), `"partition": "init_boot"`, `"partition": "recovery"`, 1)
+	if _, err := Parse([]byte(broken)); err == nil {
+		t.Fatal("a footer for an image the profile does not build must fail")
+	}
+	noBoot := strings.Replace(string(data), `"source": "dtbo"`, `"source": "dtb"`, 1)
+	if _, err := Parse([]byte(noBoot)); err == nil {
+		t.Fatal("an unknown partition source must fail")
 	}
 }
