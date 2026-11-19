@@ -31,7 +31,7 @@
       { "name": "b0", "id": "0x9855001" },
       { "name": "a0", "id": "0x9855000" }
     ],
-    "bootargs": "console=tty0 loglevel=4 quiet panic=10 clk_ignore_unused pd_ignore_unused rdinit=/init mem_sleep_default=s2idle vt.global_cursor_default=0 sing.roothash=anchor sing.datapart=userdata lsm=landlock,yama,bpf max77759_charger.default_ilim_ua=500000 max77759_charger.temp_guard=1",
+    "bootargs": "console=tty0 loglevel=4 quiet panic=10 clk_ignore_unused pd_ignore_unused rdinit=/init mem_sleep_default=s2idle vt.global_cursor_default=0 sing.roothash=anchor sing.datapart=userdata lsm=landlock,yama,bpf max77759_charger.default_ilim_ua=500000 max77759_charger.temp_guard=1 firmware_class.path=/var/lib/sinty/firmware",
     "vendor_cmdline": "console=tty0 earlycon=exynos4210,0x10A00000 clk_ignore_unused pd_ignore_unused printk.devkmsg=on bootconfig",
     "vendor_page_size": 2048,
     "os_version": "17.0.0",
@@ -48,7 +48,27 @@
   },
   "firmware": {
     "preserve": true,
-    "restore": "https://developers.google.com/android/images#cheetah"
+    "restore": "https://developers.google.com/android/images#cheetah",
+    "extract": {
+      "partition": "vendor",
+      "files": [
+        { "from": "firmware/fw_bcmdhd.bin", "to": "brcm/brcmfmac4389c1-pcie.google,gs201-cheetah.bin" },
+        { "from": "firmware/bcmdhd.cal", "to": "brcm/brcmfmac4389c1-pcie.google,gs201-cheetah.txt" },
+        { "from": "firmware/bcmdhd_clm.blob", "to": "brcm/brcmfmac4389c1-pcie.google,gs201-cheetah.clm_blob" },
+        { "from": "firmware/brcm/BCM.hcd", "to": "brcm/BCM.google,gs201-cheetah.hcd" },
+        { "from": "firmware/aoc.bin", "to": "aoc.bin" },
+        { "from": "firmware/cs40l26.wmfw", "to": "cs40l26.wmfw" },
+        { "from": "firmware/cs40l26.bin", "to": "cs40l26.bin" },
+        { "from": "firmware/cs40l26-svc.bin", "to": "cs40l26-svc.bin" },
+        { "from": "firmware/cs40l26-dvl.bin", "to": "cs40l26-dvl.bin" },
+        { "from": "firmware/cs40l26-calib.wmfw", "to": "cs40l26-calib.wmfw" },
+        { "from": "firmware/cs35l41-dsp1-spk-prot.wmfw", "to": "cirrus/cs35l41-dsp1-spk-prot-cheetah.wmfw" },
+        { "from": "firmware/cs35l41-dsp1-spk-prot.bin", "to": "cirrus/cs35l41-dsp1-spk-prot-cheetah-top.bin" },
+        { "from": "firmware/R-cs35l41-dsp1-spk-prot.bin", "to": "cirrus/cs35l41-dsp1-spk-prot-cheetah-bottom.bin" },
+        { "from": "firmware/fast_switch3.txt", "to": "cirrus/cs35l41-cheetah-top-media-delta.txt" },
+        { "from": "firmware/fast_switch4.txt", "to": "cirrus/cs35l41-cheetah-bottom-media-delta.txt" }
+      ]
+    }
   },
   "notes": [
     "Unlock the bootloader first: enable OEM unlocking in Android's developer options, then run the unlock from fastboot. Unlocking wipes the phone.",

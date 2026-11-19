@@ -40,8 +40,21 @@ type Install struct {
 }
 
 type Firmware struct {
-	Preserve bool   `json:"preserve,omitempty"`
-	Restore  string `json:"restore,omitempty"`
+	Preserve bool     `json:"preserve,omitempty"`
+	Restore  string   `json:"restore,omitempty"`
+	Extract  *Extract `json:"extract,omitempty"`
+}
+
+// Extract names the firmware a device takes from the Android partition its
+// owner already has on it, and the names the mainline drivers ask for.
+type Extract struct {
+	Partition string     `json:"partition"`
+	Files     []FileCopy `json:"files"`
+}
+
+type FileCopy struct {
+	From string `json:"from"`
+	To   string `json:"to"`
 }
 
 type SocID struct {
@@ -254,6 +267,25 @@ func (p *Profile) Validate() error {
 	if p.Firmware != nil && p.Firmware.Restore != "" && !strings.HasPrefix(p.Firmware.Restore, "https://") {
 		bad("firmware restore link must be https")
 	}
+	if p.Firmware != nil && p.Firmware.Extract != nil {
+		x := p.Firmware.Extract
+		if x.Partition == "" || strings.ContainsAny(x.Partition, "/ ") {
+			bad("firmware extract partition %q is not a partition name", x.Partition)
+		}
+		if len(x.Files) == 0 {
+			bad("firmware extract lists no files")
+		}
+		seen := map[string]bool{}
+		for _, f := range x.Files {
+			if !relativePath(f.From) || !relativePath(f.To) {
+				bad("firmware file %q -> %q is not a relative path inside its directory", f.From, f.To)
+			}
+			if seen[f.To] {
+				bad("firmware file %q is written twice", f.To)
+			}
+			seen[f.To] = true
+		}
+	}
 	return errors.Join(errs...)
 }
 
@@ -345,4 +377,16 @@ func (ix *Index) Find(id string) (Entry, bool) {
 func Digest(data []byte) string {
 	sum := sha256.Sum256(data)
 	return hex.EncodeToString(sum[:])
+}
+
+func relativePath(p string) bool {
+	if p == "" || strings.HasPrefix(p, "/") {
+		return false
+	}
+	for _, part := range strings.Split(p, "/") {
+		if part == "" || part == "." || part == ".." {
+			return false
+		}
+	}
+	return true
 }

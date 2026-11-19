@@ -18,6 +18,8 @@ the device has a network.
 | `schema/profile.schema.json` | the profile format, for editors |
 | `profile/` | the Go package that parses and validates profiles, shared with the tools |
 | `devices.go` | the catalog embedded in Go, for the Sinty installer that runs offline |
+| `android/` | reads the logical partitions of an Android `super` partition |
+| `cmd/sinty-vendor-firmware` | installs the firmware a profile extracts, on the device |
 | `cmd/validate` | the check CI runs on every pull request |
 
 ## Profile
@@ -69,6 +71,13 @@ the device has a network.
   version, and `avb` hash footers padded to each partition. See
   `devices/google/pixel-7-pro.json`.
 - `firmware.restore` links the vendor's own way back to the original system.
+- `firmware.extract` lists the firmware a device takes from the Android
+  partition its owner already has on it, under the names the mainline drivers
+  request. `sinty-vendor-firmware` runs on the device: it finds the logical
+  `partition` of the booted slot in `super`, maps it read-only, copies `files`
+  into `/var/lib/sinty/firmware` and records the vendor build, so the copy is
+  made again only after Android's vendor partition changes. Nothing is
+  redistributed: every phone uses its own files.
 
 ## Adding a device
 
