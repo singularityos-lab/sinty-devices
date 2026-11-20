@@ -22,6 +22,7 @@ the device has a network.
 | `device/` | finds the running device's profile and the partitions it names |
 | `cmd/sinty-vendor-firmware` | installs the firmware a profile extracts, on the device |
 | `cmd/sinty-android-boot` | keeps a phone's boot partitions on the kernel of the root it runs |
+| `cmd/sinty-usb-link` | carries the Sinty Debug Bridge over the USB cable on devices that can act as a USB device |
 | `cmd/validate` | the check CI runs on every pull request |
 
 ## Profile
@@ -86,6 +87,21 @@ the device has a network.
   into `/var/lib/sinty/firmware` and records the vendor build, so the copy is
   made again only after Android's vendor partition changes. Nothing is
   redistributed: every phone uses its own files.
+
+## Debug bridge over USB
+
+When the owner turns the Sinty Debug Bridge on, `sinty-usb-link` presents a USB
+network function on the first USB device controller, if the device has one.
+The device takes `172.16.42.1` and hands the computer `172.16.42.2` over DHCP,
+with no route and no name server, so the computer needs no setup and never
+sends its own traffic through the device:
+
+```bash
+sdb pair 172.16.42.1
+```
+
+Devices without a USB device controller, like most laptops, use the bridge over
+the network only.
 
 ## Adding a device
 
