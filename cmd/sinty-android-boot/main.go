@@ -138,20 +138,18 @@ func install(p *profile.Profile, kernelcache string) error {
 // writePartition lifts the read-only flag the boot's disk guard set, writes
 // img at the start of the partition, reads it back, and sets the flag again.
 func writePartition(node string, img []byte) error {
+	ro, err := os.Open(node)
+	if err != nil {
+		return err
+	}
+	err = setRO(ro, 0)
+	ro.Close()
+	if err != nil {
+		return err
+	}
 	f, err := os.OpenFile(node, os.O_RDWR, 0)
 	if err != nil {
-		f, err = os.Open(node)
-		if err != nil {
-			return err
-		}
-		if err := setRO(f, 0); err != nil {
-			f.Close()
-			return err
-		}
-		f.Close()
-		if f, err = os.OpenFile(node, os.O_RDWR, 0); err != nil {
-			return err
-		}
+		return err
 	}
 	defer func() {
 		setRO(f, 1)
