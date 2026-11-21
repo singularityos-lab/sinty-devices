@@ -50,6 +50,19 @@ type Firmware struct {
 type Extract struct {
 	Partition string     `json:"partition"`
 	Files     []FileCopy `json:"files"`
+	Generate  []Generate `json:"generate,omitempty"`
+}
+
+// Generate runs a tool shipped in the image on one file of the partition and
+// keeps what it writes, for data a driver needs that has to be derived from
+// the owner's own copy rather than copied as it is. In Args, {input} stands
+// for the partition file and {output} for the directory the tool writes to.
+type Generate struct {
+	Name  string   `json:"name"`
+	Tool  string   `json:"tool"`
+	Input string   `json:"input"`
+	To    string   `json:"to"`
+	Args  []string `json:"args"`
 }
 
 type FileCopy struct {
@@ -284,6 +297,29 @@ func (p *Profile) Validate() error {
 				bad("firmware file %q is written twice", f.To)
 			}
 			seen[f.To] = true
+		}
+		for _, g := range x.Generate {
+			if g.Name == "" {
+				bad("firmware generator has no name")
+			}
+			if !strings.HasPrefix(g.Tool, "/") {
+				bad("firmware generator %q tool %q is not an absolute path", g.Name, g.Tool)
+			}
+			if !relativePath(g.Input) || !relativePath(g.To) {
+				bad("firmware generator %q input %q or output %q is not a relative path inside its directory", g.Name, g.Input, g.To)
+			}
+			if seen[g.To] {
+				bad("firmware generator %q writes %q twice", g.Name, g.To)
+			}
+			seen[g.To] = true
+			in, out := false, false
+			for _, a := range g.Args {
+				in = in || strings.Contains(a, "{input}")
+				out = out || strings.Contains(a, "{output}")
+			}
+			if !in || !out {
+				bad("firmware generator %q arguments must name {input} and {output}", g.Name)
+			}
 		}
 	}
 	return errors.Join(errs...)

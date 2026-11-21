@@ -6,11 +6,14 @@ package main
 
 import (
 	"bufio"
+	"crypto/sha256"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -98,18 +101,29 @@ func run(out, sysBlock, compatPath, bootconfig string) error {
 	}
 	defer syscall.Unmount(mnt, 0)
 
-	stamp := fingerprint(filepath.Join(mnt, buildProp))
+	stamp := stampFor(fingerprint(filepath.Join(mnt, buildProp)), x)
 	if stamp != "" {
 		if have, err := os.ReadFile(filepath.Join(out, stampName)); err == nil && string(have) == stamp+"\n" {
 			return nil
 		}
 	}
-	n, err := install(mnt, out, x.Files, stamp)
+	n, err := install(mnt, out, x, stamp)
 	if err != nil {
 		return err
 	}
 	fmt.Printf("sinty-vendor-firmware: %d files from %s (%s) in %s\n", n, name, stamp, out)
 	return nil
+}
+
+// stampFor ties the installed set to the vendor build and to what the profile
+// asks for, so a profile that gains a file or a generator installs again.
+func stampFor(vendor string, x *profile.Extract) string {
+	if vendor == "" {
+		return ""
+	}
+	b, _ := json.Marshal(x)
+	sum := sha256.Sum256(b)
+	return fmt.Sprintf("%s %x", vendor, sum[:6])
 }
 
 func bootedSlot(bootconfig string) (int, error) {
@@ -153,17 +167,29 @@ func fingerprint(path string) string {
 
 // install copies the files into a fresh directory next to out and puts it in
 // place of out, so a reader sees either the old set or the whole new one.
-func install(src, out string, files []profile.FileCopy, stamp string) (int, error) {
+// A generator that fails leaves its output out and the stamp marked, so the
+// copied firmware still lands and the next start tries the generator again.
+func install(src, out string, x *profile.Extract, stamp string) (int, error) {
 	next := out + ".new"
 	os.RemoveAll(next)
 	if err := os.MkdirAll(next, 0o755); err != nil {
 		return 0, err
 	}
-	for _, f := range files {
+	for _, f := range x.Files {
 		if err := copyFile(filepath.Join(src, f.From), filepath.Join(next, f.To)); err != nil {
 			os.RemoveAll(next)
 			return 0, err
 		}
+	}
+	n := len(x.Files)
+	for _, g := range x.Generate {
+		made, err := generate(src, next, g)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "sinty-vendor-firmware: %s: %v\n", g.Name, err)
+			stamp += " incomplete"
+			continue
+		}
+		n += made
 	}
 	if err := os.WriteFile(filepath.Join(next, stampName), []byte(stamp+"\n"), 0o644); err != nil {
 		os.RemoveAll(next)
@@ -178,7 +204,37 @@ func install(src, out string, files []profile.FileCopy, stamp string) (int, erro
 		return 0, err
 	}
 	os.RemoveAll(old)
-	return len(files), nil
+	return n, nil
+}
+
+func generate(src, next string, g profile.Generate) (int, error) {
+	dir := filepath.Join(next, g.To)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return 0, err
+	}
+	tmp, err := os.MkdirTemp(next, ".generate-")
+	if err != nil {
+		return 0, err
+	}
+	defer os.RemoveAll(tmp)
+	args := make([]string, len(g.Args))
+	for i, a := range g.Args {
+		a = strings.ReplaceAll(a, "{input}", filepath.Join(src, g.Input))
+		args[i] = strings.ReplaceAll(a, "{output}", dir)
+	}
+	cmd := exec.Command(g.Tool, args...)
+	cmd.Env = append(os.Environ(), "TMPDIR="+tmp)
+	cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
+	if err := cmd.Run(); err != nil {
+		os.RemoveAll(dir)
+		return 0, err
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil || len(entries) == 0 {
+		os.RemoveAll(dir)
+		return 0, fmt.Errorf("%s wrote nothing", g.Tool)
+	}
+	return len(entries), nil
 }
 
 func copyFile(src, dst string) error {

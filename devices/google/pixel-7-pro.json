@@ -67,6 +67,9 @@
         { "from": "firmware/R-cs35l41-dsp1-spk-prot.bin", "to": "cirrus/cs35l41-dsp1-spk-prot-cheetah-bottom.bin" },
         { "from": "firmware/fast_switch3.txt", "to": "cirrus/cs35l41-cheetah-top-media-delta.txt" },
         { "from": "firmware/fast_switch4.txt", "to": "cirrus/cs35l41-cheetah-bottom-media-delta.txt" }
+      ],
+      "generate": [
+        { "name": "camera", "tool": "/usr/libexec/sinty/extract-camera-data", "input": "apex/com.google.pixel.camera.hal.apex", "to": "omamobile/camera", "args": ["--apex", "{input}", "-d", "{output}"] }
       ]
     }
   },

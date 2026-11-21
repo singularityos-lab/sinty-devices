@@ -110,6 +110,18 @@ func TestPixelBootProfile(t *testing.T) {
 	if _, err := Parse([]byte(broken)); err == nil {
 		t.Fatal("a footer for an image the profile does not build must fail")
 	}
+	if p.Firmware == nil || p.Firmware.Extract == nil || len(p.Firmware.Extract.Generate) != 1 {
+		t.Fatal("the camera data generator is not read")
+	}
+	for name, doc := range map[string]string{
+		"relative tool":  strings.Replace(string(data), `"/usr/libexec/sinty/extract-camera-data"`, `"extract-camera-data"`, 1),
+		"escaping input": strings.Replace(string(data), `"apex/com.google.pixel.camera.hal.apex"`, `"../apex"`, 1),
+		"no output arg":  strings.Replace(string(data), `"-d", "{output}"`, `"-d", "out"`, 1),
+	} {
+		if _, err := Parse([]byte(doc)); err == nil {
+			t.Fatalf("%s: accepted", name)
+		}
+	}
 	noBoot := strings.Replace(string(data), `"source": "dtbo"`, `"source": "dtb"`, 1)
 	if _, err := Parse([]byte(noBoot)); err == nil {
 		t.Fatal("an unknown partition source must fail")
